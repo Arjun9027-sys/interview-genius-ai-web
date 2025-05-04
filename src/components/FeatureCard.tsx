@@ -3,6 +3,7 @@ import { ReactNode } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
+import { ArrowRight } from 'lucide-react';
 
 interface FeatureCardProps {
   title: string;
@@ -15,7 +16,7 @@ interface FeatureCardProps {
 
 const FeatureCard = ({ title, description, icon, linkTo, buttonText, isPrimary = false }: FeatureCardProps) => {
   return (
-    <Card className={`card-hover border-2 ${isPrimary ? 'border-custom-purple-light' : 'border-gray-100'} transition-all hover:shadow-md`}>
+    <Card className={`card-hover border-2 transform transition-all duration-300 hover:-translate-y-1 hover:shadow-lg ${isPrimary ? 'border-custom-purple-light' : 'border-gray-100'}`}>
       <CardHeader>
         <div className="h-12 w-12 rounded-full bg-custom-purple-light flex items-center justify-center mb-4">
           {icon}
@@ -31,7 +32,10 @@ const FeatureCard = ({ title, description, icon, linkTo, buttonText, isPrimary =
             : 'bg-custom-purple hover:bg-custom-purple-dark'
           }`}
         >
-          <Link to={linkTo}>{buttonText}</Link>
+          <Link to={linkTo} className="flex items-center justify-center">
+            {buttonText}
+            <ArrowRight className="ml-2 h-4 w-4" />
+          </Link>
         </Button>
       </CardContent>
     </Card>

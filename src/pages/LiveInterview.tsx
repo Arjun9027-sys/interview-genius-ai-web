@@ -2,8 +2,9 @@
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
-import { Calendar, Clock } from 'lucide-react';
+import { Calendar, Clock, ArrowRight } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Link } from 'react-router-dom';
 
 const LiveInterview = () => {
   const interviewTypes = [
@@ -35,9 +36,19 @@ const LiveInterview = () => {
               <p className="text-xl text-gray-600 mb-8">
                 Schedule a one-on-one session with professional interviewers for personalized feedback and coaching.
               </p>
-              <Button className="bg-custom-purple hover:bg-custom-purple-dark text-lg px-8 py-6">
-                View Available Sessions
-              </Button>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <Button 
+                  className="bg-custom-purple hover:bg-custom-purple-dark text-lg px-8 py-6"
+                  asChild
+                >
+                  <Link to="/start-live-interview">
+                    Start a New Interview <ArrowRight className="ml-2 h-5 w-5" />
+                  </Link>
+                </Button>
+                <Button className="bg-custom-purple-light hover:bg-custom-purple text-lg px-8 py-6">
+                  View Available Sessions
+                </Button>
+              </div>
             </div>
           </div>
         </section>
