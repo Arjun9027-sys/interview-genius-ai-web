@@ -578,7 +578,7 @@ const InterviewRoom = () => {
                         language={currentLanguage}
                         value={currentCode}
                         onChange={setCurrentCode}
-                        readOnly={isHost}
+                        readOnly={false}
                         height="400px"
                         width="100%"
                       />
