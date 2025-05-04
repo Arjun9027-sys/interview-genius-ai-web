@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { Video, VideoOff, Mic, MicOff, MessageSquare, User, Share, Mail, Code, FileCode } from 'lucide-react';
@@ -574,12 +573,14 @@ const InterviewRoom = () => {
                 
                 {(selectedQuestionId || isHost) && (
                   <>
-                    <div className="border rounded-lg overflow-hidden" style={{ height: '400px' }}>
+                    <div className="border rounded-lg overflow-hidden">
                       <CodeEditor
                         language={currentLanguage}
                         value={currentCode}
                         onChange={setCurrentCode}
                         readOnly={isHost}
+                        height="400px"
+                        width="100%"
                       />
                     </div>
                     

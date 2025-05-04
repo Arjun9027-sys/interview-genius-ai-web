@@ -7,9 +7,18 @@ interface CodeEditorProps {
   value: string;
   onChange?: (value: string) => void;
   readOnly?: boolean;
+  height?: string;
+  width?: string;
 }
 
-const CodeEditor = ({ language, value, onChange, readOnly = false }: CodeEditorProps) => {
+const CodeEditor = ({ 
+  language, 
+  value, 
+  onChange, 
+  readOnly = false,
+  height = "400px",
+  width = "100%" 
+}: CodeEditorProps) => {
   const editorRef = useRef(null);
 
   const handleEditorDidMount = (editor: any) => {
@@ -49,22 +58,25 @@ const CodeEditor = ({ language, value, onChange, readOnly = false }: CodeEditorP
   };
 
   return (
-    <Editor
-      height="100%"
-      language={getMonacoLanguage(language)}
-      value={value}
-      onChange={handleChange}
-      options={{
-        minimap: { enabled: false },
-        scrollBeyondLastLine: false,
-        fontSize: 14,
-        readOnly,
-        wordWrap: 'on',
-        automaticLayout: true,
-      }}
-      onMount={handleEditorDidMount}
-      theme="vs-dark"
-    />
+    <div className="w-full h-full" style={{ width, height }}>
+      <Editor
+        height="100%"
+        width="100%"
+        language={getMonacoLanguage(language)}
+        value={value}
+        onChange={handleChange}
+        options={{
+          minimap: { enabled: false },
+          scrollBeyondLastLine: false,
+          fontSize: 14,
+          readOnly,
+          wordWrap: 'on',
+          automaticLayout: true,
+        }}
+        onMount={handleEditorDidMount}
+        theme="vs-dark"
+      />
+    </div>
   );
 };
 
