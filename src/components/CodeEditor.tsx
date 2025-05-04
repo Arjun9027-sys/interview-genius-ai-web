@@ -14,6 +14,13 @@ const CodeEditor = ({ language, value, onChange, readOnly = false }: CodeEditorP
 
   const handleEditorDidMount = (editor: any) => {
     editorRef.current = editor;
+    
+    // Focus the editor if it's not read-only
+    if (!readOnly) {
+      setTimeout(() => {
+        editor.focus();
+      }, 100);
+    }
   };
 
   const handleChange = (value: string | undefined) => {
@@ -38,7 +45,7 @@ const CodeEditor = ({ language, value, onChange, readOnly = false }: CodeEditorP
       // Add more languages as needed
     };
     
-    return languageMap[lang] || 'plaintext';
+    return languageMap[lang.toLowerCase()] || 'plaintext';
   };
 
   return (
