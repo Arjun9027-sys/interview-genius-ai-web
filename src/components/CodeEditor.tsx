@@ -58,7 +58,7 @@ const CodeEditor = ({
   };
 
   return (
-    <div className="w-full h-full" style={{ width, height }}>
+    <div className="w-full h-full overflow-hidden" style={{ width, height }}>
       <Editor
         height="100%"
         width="100%"

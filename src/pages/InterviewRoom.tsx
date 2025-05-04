@@ -349,7 +349,7 @@ const InterviewRoom = () => {
       </header>
       
       <main className="flex-grow flex">
-        {/* Main content area */}
+        {/* Main content area - Adjusted to ensure proper layout balance */}
         <div className={`flex-grow p-4 ${isChatOpen || isCodeEditorOpen ? 'md:w-2/3' : 'w-full'}`}>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 h-full">
             {/* Local video */}
@@ -464,14 +464,14 @@ const InterviewRoom = () => {
           </div>
         )}
         
-        {/* Code Editor sidebar */}
+        {/* Code Editor sidebar - Improved positioning */}
         {isCodeEditorOpen && (
-          <div className="w-full md:w-1/3 bg-white border-l border-gray-200 flex flex-col h-[calc(100vh-64px)]">
+          <div className="w-full md:w-1/3 bg-white border-l border-gray-200 flex flex-col h-[calc(100vh-64px)] overflow-hidden">
             <div className="p-4 border-b">
               <h2 className="font-semibold text-lg">Coding Interview</h2>
             </div>
             
-            <Tabs defaultValue={isHost ? "question" : "answer"} className="p-4">
+            <Tabs defaultValue={isHost ? "question" : "answer"} className="flex flex-col flex-grow overflow-hidden">
               <TabsList className="grid w-full grid-cols-2">
                 {isHost && <TabsTrigger value="question">Create Question</TabsTrigger>}
                 <TabsTrigger value="answer" className={isHost ? "" : "col-span-2"}>
@@ -481,7 +481,7 @@ const InterviewRoom = () => {
               
               {/* Question Tab - Only for Host */}
               {isHost && (
-                <TabsContent value="question" className="space-y-4 pt-4">
+                <TabsContent value="question" className="space-y-4 pt-4 overflow-y-auto flex-grow">
                   <div className="space-y-2">
                     <label className="text-sm font-medium">Programming Language</label>
                     <select 
@@ -545,8 +545,8 @@ const InterviewRoom = () => {
                 </TabsContent>
               )}
               
-              {/* Answer Tab - For all participants */}
-              <TabsContent value="answer" className="space-y-4 pt-4">
+              {/* Answer Tab - For all participants - Fixed layout */}
+              <TabsContent value="answer" className="space-y-4 pt-4 overflow-y-auto flex-grow">
                 {!isHost && (
                   <div className="space-y-2">
                     <label className="text-sm font-medium">Select Question</label>
@@ -573,13 +573,13 @@ const InterviewRoom = () => {
                 
                 {(selectedQuestionId || isHost) && (
                   <>
-                    <div className="border rounded-lg overflow-hidden">
+                    <div className="border rounded-lg overflow-hidden h-[350px]">
                       <CodeEditor
                         language={currentLanguage}
                         value={currentCode}
                         onChange={setCurrentCode}
                         readOnly={false}
-                        height="400px"
+                        height="100%"
                         width="100%"
                       />
                     </div>
@@ -594,7 +594,7 @@ const InterviewRoom = () => {
                     )}
                     
                     {isHost && codeAnswers.length > 0 && (
-                      <div>
+                      <div className="mt-4 overflow-y-auto max-h-[200px]">
                         <h3 className="text-sm font-medium mb-2">Candidate Solutions</h3>
                         <div className="space-y-2">
                           {codeAnswers.map(answer => {
