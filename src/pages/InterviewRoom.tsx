@@ -348,10 +348,10 @@ const InterviewRoom = () => {
         </div>
       </header>
       
-      <main className="flex-grow flex">
-        {/* Main content area - Adjusted to ensure proper layout balance */}
-        <div className={`flex-grow p-4 ${isChatOpen || isCodeEditorOpen ? 'md:w-2/3' : 'w-full'}`}>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 h-full">
+      <main className="flex-grow flex flex-col">
+        {/* Video section */}
+        <div className="p-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {/* Local video */}
             <div className="bg-black rounded-lg overflow-hidden relative aspect-video">
               <video
@@ -401,9 +401,172 @@ const InterviewRoom = () => {
           </div>
         </div>
         
+        {/* Code Editor Section - Positioned under both cameras */}
+        {isCodeEditorOpen && (
+          <div className="p-4 bg-white border-t border-gray-200">
+            <h2 className="font-semibold text-lg mb-4">Coding Interview</h2>
+            
+            <Tabs defaultValue={isHost ? "question" : "answer"} className="w-full">
+              <TabsList className="grid w-full grid-cols-2 mb-4">
+                {isHost && <TabsTrigger value="question">Create Question</TabsTrigger>}
+                <TabsTrigger value="answer" className={isHost ? "" : "col-span-2"}>
+                  {isHost ? "View Answers" : "Answer Question"}
+                </TabsTrigger>
+              </TabsList>
+              
+              {/* Question Tab - Only for Host */}
+              {isHost && (
+                <TabsContent value="question" className="space-y-4">
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                    <div className="lg:col-span-1 space-y-4">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Programming Language</label>
+                        <select 
+                          className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
+                          value={currentLanguage}
+                          onChange={(e) => setCurrentLanguage(e.target.value)}
+                        >
+                          <option value="javascript">JavaScript</option>
+                          <option value="typescript">TypeScript</option>
+                          <option value="python">Python</option>
+                          <option value="java">Java</option>
+                          <option value="csharp">C#</option>
+                          <option value="cpp">C++</option>
+                          <option value="php">PHP</option>
+                          <option value="ruby">Ruby</option>
+                          <option value="go">Go</option>
+                          <option value="swift">Swift</option>
+                        </select>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Question</label>
+                        <Textarea
+                          placeholder="Enter a coding question..."
+                          value={currentQuestion}
+                          onChange={(e) => setCurrentQuestion(e.target.value)}
+                          className="resize-none min-h-[120px]"
+                        />
+                      </div>
+                      
+                      <Button 
+                        onClick={addCodeQuestion} 
+                        className="w-full bg-custom-purple hover:bg-custom-purple-dark"
+                      >
+                        <FileCode className="h-4 w-4 mr-2" />
+                        Send Question
+                      </Button>
+                    </div>
+                    
+                    <div className="lg:col-span-2">
+                      <h3 className="text-sm font-medium mb-2">Previous Questions</h3>
+                      <div className="space-y-2 max-h-[300px] overflow-y-auto">
+                        {codeQuestions.length === 0 ? (
+                          <p className="text-sm text-gray-500">No questions yet</p>
+                        ) : (
+                          codeQuestions.map(q => (
+                            <div key={q.id} className="p-3 bg-gray-50 rounded border">
+                              <div className="flex justify-between items-start">
+                                <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded">
+                                  {q.language}
+                                </span>
+                                <span className="text-xs text-gray-500">
+                                  {q.timestamp.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                </span>
+                              </div>
+                              <p className="text-sm mt-2">{q.question}</p>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </TabsContent>
+              )}
+              
+              {/* Answer Tab - For all participants */}
+              <TabsContent value="answer" className="space-y-4">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                  {!isHost && (
+                    <div className="lg:col-span-1 space-y-2">
+                      <label className="text-sm font-medium">Select Question</label>
+                      <select 
+                        className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
+                        value={selectedQuestionId}
+                        onChange={(e) => {
+                          setSelectedQuestionId(e.target.value);
+                          const question = codeQuestions.find(q => q.id === e.target.value);
+                          if (question) {
+                            setCurrentLanguage(question.language);
+                          }
+                        }}
+                      >
+                        <option value="">-- Select a question --</option>
+                        {codeQuestions.map(q => (
+                          <option key={q.id} value={q.id}>
+                            {q.question.substring(0, 50)}...
+                          </option>
+                        ))}
+                      </select>
+                      
+                      {!isHost && selectedQuestionId && (
+                        <Button 
+                          onClick={submitCodeAnswer} 
+                          className="w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white"
+                        >
+                          Submit Solution
+                        </Button>
+                      )}
+                    </div>
+                  )}
+                  
+                  <div className={`${!isHost && selectedQuestionId ? 'lg:col-span-2' : 'lg:col-span-3'}`}>
+                    <div className="border rounded-lg overflow-hidden h-[400px]">
+                      <CodeEditor
+                        language={currentLanguage}
+                        value={currentCode}
+                        onChange={setCurrentCode}
+                        readOnly={false}
+                        height="100%"
+                        width="100%"
+                      />
+                    </div>
+                  </div>
+                  
+                  {isHost && codeAnswers.length > 0 && (
+                    <div className="lg:col-span-3 mt-4">
+                      <h3 className="text-sm font-medium mb-2">Candidate Solutions</h3>
+                      <div className="space-y-2 max-h-[200px] overflow-y-auto">
+                        {codeAnswers.map(answer => {
+                          const question = codeQuestions.find(q => q.id === answer.questionId);
+                          return (
+                            <div key={answer.id} className="p-3 bg-gray-50 rounded border">
+                              <div className="flex justify-between items-start">
+                                <span className="text-xs font-medium text-blue-600">
+                                  Question: {question ? question.question.substring(0, 30) + '...' : 'Unknown'}
+                                </span>
+                                <span className="text-xs text-gray-500">
+                                  {answer.timestamp.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                </span>
+                              </div>
+                              <div className="mt-2 p-2 bg-gray-800 text-white rounded overflow-x-auto text-sm">
+                                <pre><code>{answer.code}</code></pre>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </TabsContent>
+            </Tabs>
+          </div>
+        )}
+        
         {/* Chat sidebar */}
         {isChatOpen && (
-          <div className="w-full md:w-1/3 bg-white border-l border-gray-200 flex flex-col h-[calc(100vh-64px)]">
+          <div className="fixed right-0 top-16 w-full md:w-1/3 bg-white border-l border-gray-200 flex flex-col h-[calc(100vh-64px)] z-10">
             <div className="p-4 border-b">
               <h2 className="font-semibold text-lg">Interview Chat</h2>
             </div>
@@ -461,167 +624,6 @@ const InterviewRoom = () => {
                 </Button>
               </div>
             </div>
-          </div>
-        )}
-        
-        {/* Code Editor sidebar - Improved positioning */}
-        {isCodeEditorOpen && (
-          <div className="w-full md:w-1/3 bg-white border-l border-gray-200 flex flex-col h-[calc(100vh-64px)] overflow-hidden">
-            <div className="p-4 border-b">
-              <h2 className="font-semibold text-lg">Coding Interview</h2>
-            </div>
-            
-            <Tabs defaultValue={isHost ? "question" : "answer"} className="flex flex-col flex-grow overflow-hidden">
-              <TabsList className="grid w-full grid-cols-2">
-                {isHost && <TabsTrigger value="question">Create Question</TabsTrigger>}
-                <TabsTrigger value="answer" className={isHost ? "" : "col-span-2"}>
-                  {isHost ? "View Answers" : "Answer Question"}
-                </TabsTrigger>
-              </TabsList>
-              
-              {/* Question Tab - Only for Host */}
-              {isHost && (
-                <TabsContent value="question" className="space-y-4 pt-4 overflow-y-auto flex-grow">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Programming Language</label>
-                    <select 
-                      className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
-                      value={currentLanguage}
-                      onChange={(e) => setCurrentLanguage(e.target.value)}
-                    >
-                      <option value="javascript">JavaScript</option>
-                      <option value="typescript">TypeScript</option>
-                      <option value="python">Python</option>
-                      <option value="java">Java</option>
-                      <option value="csharp">C#</option>
-                      <option value="cpp">C++</option>
-                      <option value="php">PHP</option>
-                      <option value="ruby">Ruby</option>
-                      <option value="go">Go</option>
-                      <option value="swift">Swift</option>
-                    </select>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Question</label>
-                    <Textarea
-                      placeholder="Enter a coding question..."
-                      value={currentQuestion}
-                      onChange={(e) => setCurrentQuestion(e.target.value)}
-                      className="resize-none min-h-[120px]"
-                    />
-                  </div>
-                  
-                  <Button 
-                    onClick={addCodeQuestion} 
-                    className="w-full bg-custom-purple hover:bg-custom-purple-dark"
-                  >
-                    <FileCode className="h-4 w-4 mr-2" />
-                    Send Question
-                  </Button>
-                  
-                  <div className="pt-4">
-                    <h3 className="text-sm font-medium mb-2">Previous Questions</h3>
-                    <div className="space-y-2 max-h-[300px] overflow-y-auto">
-                      {codeQuestions.length === 0 ? (
-                        <p className="text-sm text-gray-500">No questions yet</p>
-                      ) : (
-                        codeQuestions.map(q => (
-                          <div key={q.id} className="p-3 bg-gray-50 rounded border">
-                            <div className="flex justify-between items-start">
-                              <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded">
-                                {q.language}
-                              </span>
-                              <span className="text-xs text-gray-500">
-                                {q.timestamp.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                              </span>
-                            </div>
-                            <p className="text-sm mt-2">{q.question}</p>
-                          </div>
-                        ))
-                      )}
-                    </div>
-                  </div>
-                </TabsContent>
-              )}
-              
-              {/* Answer Tab - For all participants - Fixed layout */}
-              <TabsContent value="answer" className="space-y-4 pt-4 overflow-y-auto flex-grow">
-                {!isHost && (
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Select Question</label>
-                    <select 
-                      className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
-                      value={selectedQuestionId}
-                      onChange={(e) => {
-                        setSelectedQuestionId(e.target.value);
-                        const question = codeQuestions.find(q => q.id === e.target.value);
-                        if (question) {
-                          setCurrentLanguage(question.language);
-                        }
-                      }}
-                    >
-                      <option value="">-- Select a question --</option>
-                      {codeQuestions.map(q => (
-                        <option key={q.id} value={q.id}>
-                          {q.question.substring(0, 50)}...
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                )}
-                
-                {(selectedQuestionId || isHost) && (
-                  <>
-                    <div className="border rounded-lg overflow-hidden h-[350px]">
-                      <CodeEditor
-                        language={currentLanguage}
-                        value={currentCode}
-                        onChange={setCurrentCode}
-                        readOnly={false}
-                        height="100%"
-                        width="100%"
-                      />
-                    </div>
-                    
-                    {!isHost && (
-                      <Button 
-                        onClick={submitCodeAnswer} 
-                        className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-                      >
-                        Submit Solution
-                      </Button>
-                    )}
-                    
-                    {isHost && codeAnswers.length > 0 && (
-                      <div className="mt-4 overflow-y-auto max-h-[200px]">
-                        <h3 className="text-sm font-medium mb-2">Candidate Solutions</h3>
-                        <div className="space-y-2">
-                          {codeAnswers.map(answer => {
-                            const question = codeQuestions.find(q => q.id === answer.questionId);
-                            return (
-                              <div key={answer.id} className="p-3 bg-gray-50 rounded border">
-                                <div className="flex justify-between items-start">
-                                  <span className="text-xs font-medium text-blue-600">
-                                    Question: {question ? question.question.substring(0, 30) + '...' : 'Unknown'}
-                                  </span>
-                                  <span className="text-xs text-gray-500">
-                                    {answer.timestamp.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                                  </span>
-                                </div>
-                                <div className="mt-2 p-2 bg-gray-800 text-white rounded overflow-x-auto text-sm">
-                                  <pre><code>{answer.code}</code></pre>
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    )}
-                  </>
-                )}
-              </TabsContent>
-            </Tabs>
           </div>
         )}
       </main>
