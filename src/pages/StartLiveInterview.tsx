@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Copy, Users, User, ArrowRight } from 'lucide-react';
@@ -26,6 +25,7 @@ const StartLiveInterview = () => {
   const [meetingLink, setMeetingLink] = useState('');
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRole, setInviteRole] = useState('participant');
+  const [meetingId, setMeetingId] = useState('');
 
   // Meeting type options
   const meetingTypes = [
@@ -50,8 +50,9 @@ const StartLiveInterview = () => {
     
     // Simulate API call with timeout
     setTimeout(() => {
-      const meetingId = generateMeetingId();
-      const generatedLink = `${window.location.origin}/live-interview/${meetingId}`;
+      const generatedId = generateMeetingId();
+      setMeetingId(generatedId);
+      const generatedLink = `${window.location.origin}/live-interview/${generatedId}`;
       setMeetingLink(generatedLink);
       setShowDialog(true);
       setIsGenerating(false);
@@ -79,11 +80,10 @@ const StartLiveInterview = () => {
   // Join the meeting as host
   const joinMeeting = () => {
     toast.success("Starting interview session...");
-    // In a real implementation, this would redirect to the actual meeting room
-    // with proper authentication as the host
+    // Redirect to the actual meeting room with the generated ID
     setTimeout(() => {
-      navigate(`/live-interview`);
-    }, 1500);
+      navigate(`/live-interview/${meetingId}`);
+    }, 1000);
   };
 
   return (

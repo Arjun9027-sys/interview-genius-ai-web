@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import LiveInterview from "./pages/LiveInterview";
 import StartLiveInterview from "./pages/StartLiveInterview";
+import InterviewRoom from "./pages/InterviewRoom";
 import AiInterview from "./pages/AiInterview";
 import ResumeBuilder from "./pages/ResumeBuilder";
 import NotFound from "./pages/NotFound";
@@ -23,6 +24,7 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/live-interview" element={<LiveInterview />} />
           <Route path="/start-live-interview" element={<StartLiveInterview />} />
+          <Route path="/live-interview/:roomId" element={<InterviewRoom />} />
           <Route path="/ai-interview" element={<AiInterview />} />
           <Route path="/resume-builder" element={<ResumeBuilder />} />
           <Route path="*" element={<NotFound />} />
