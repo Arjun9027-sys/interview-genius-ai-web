@@ -1,12 +1,21 @@
-
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { Video, VideoOff, Mic, MicOff, MessageSquare, User } from 'lucide-react';
+import { Video, VideoOff, Mic, MicOff, MessageSquare, User, Share, Mail } from 'lucide-react';
 import { toast } from "sonner";
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from '@/components/ui/input';
 
 type Message = {
   id: string;
@@ -24,12 +33,17 @@ const InterviewRoom = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
   const [userName, setUserName] = useState('You (Host)');
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [inviteRole, setInviteRole] = useState('participant');
   
   // Simulate participants (in a real app this would come from a real-time connection)
   const [participants, setParticipants] = useState([
     { id: 'user1', name: 'You (Host)', isHost: true },
     { id: 'user2', name: 'Candidate', isHost: false },
   ]);
+
+  // Generate meeting link
+  const meetingLink = window.location.href;
 
   // Initialize media stream
   useEffect(() => {
@@ -121,6 +135,24 @@ const InterviewRoom = () => {
     }, 3000);
   };
 
+  // Copy meeting link to clipboard
+  const copyLinkToClipboard = () => {
+    navigator.clipboard.writeText(meetingLink);
+    toast.success("Meeting link copied to clipboard!");
+  };
+
+  // Send invitation email
+  const sendInvitation = () => {
+    if (!inviteEmail.trim()) {
+      toast.error("Please enter an email address");
+      return;
+    }
+    
+    // Simulate sending invitation
+    toast.success(`Invitation sent to ${inviteEmail}`);
+    setInviteEmail('');
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <header className="bg-white shadow-sm border-b">
@@ -133,6 +165,67 @@ const InterviewRoom = () => {
             <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
               Live
             </span>
+            
+            {/* Share Dialog */}
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button variant="outline" className="flex items-center gap-2">
+                  <Share className="h-5 w-5" />
+                  <span>Share</span>
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Share Interview Session</DialogTitle>
+                  <DialogDescription>
+                    Invite others to join this interview session by sharing the link or sending an email.
+                  </DialogDescription>
+                </DialogHeader>
+                
+                <div className="flex items-center space-x-2 mt-4">
+                  <div className="grid flex-1 gap-2">
+                    <label className="text-sm font-medium">Meeting Link</label>
+                    <Input
+                      value={meetingLink}
+                      readOnly
+                      className="bg-gray-50"
+                    />
+                  </div>
+                  <Button type="button" size="icon" onClick={copyLinkToClipboard}>
+                    <Share className="h-4 w-4" />
+                  </Button>
+                </div>
+                
+                <div className="space-y-4 mt-4">
+                  <h4 className="text-sm font-medium">Invite by Email</h4>
+                  <div className="flex items-center space-x-2">
+                    <div className="grid flex-1 gap-2">
+                      <Input
+                        placeholder="Email address"
+                        type="email"
+                        value={inviteEmail}
+                        onChange={(e) => setInviteEmail(e.target.value)}
+                      />
+                    </div>
+                    <div className="w-[150px]">
+                      <select 
+                        className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
+                        value={inviteRole}
+                        onChange={(e) => setInviteRole(e.target.value)}
+                      >
+                        <option value="participant">Participant</option>
+                        <option value="interviewer">Co-Interviewer</option>
+                      </select>
+                    </div>
+                    <Button type="button" onClick={sendInvitation}>
+                      <Mail className="h-4 w-4 mr-2" />
+                      Invite
+                    </Button>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
+            
             <Button variant="outline" onClick={toggleChat} className="relative">
               <MessageSquare className="h-5 w-5" />
               <span className="ml-2">Chat</span>
