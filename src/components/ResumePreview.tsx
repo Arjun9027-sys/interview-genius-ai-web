@@ -69,6 +69,11 @@ const ResumePreview = ({ data, template, onDownload }: ResumePreviewProps) => {
     }
   };
 
+  // Check if the user is a fresher
+  const isFresher = data.experiences.length === 1 && 
+    data.experiences[0].company === "Fresher" && 
+    data.experiences[0].position === "No Prior Work Experience";
+
   const templateClass = `${getTemplateStyle()} ${getTemplateColor()} border-t-4`;
 
   return (
@@ -110,17 +115,31 @@ const ResumePreview = ({ data, template, onDownload }: ResumePreviewProps) => {
         {data.experiences.length > 0 && (
           <div className="mb-6">
             <h2 className="text-lg font-semibold border-b pb-1 mb-2">Experience</h2>
-            {data.experiences.map((exp, i) => (
-              <div key={i} className="mb-4">
+            {isFresher ? (
+              <div className="mb-4">
                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-baseline">
-                  <h3 className="font-medium">{exp.position} - {exp.company}</h3>
+                  <h3 className="font-medium text-gray-700">Fresher</h3>
                   <span className="text-sm text-gray-600">
-                    {exp.startDate} - {exp.current ? "Present" : exp.endDate}
+                    {data.experiences[0].startDate} - Present
                   </span>
                 </div>
-                {exp.description && <p className="text-sm mt-1">{exp.description}</p>}
+                {data.experiences[0].description && (
+                  <p className="text-sm mt-1 italic">{data.experiences[0].description}</p>
+                )}
               </div>
-            ))}
+            ) : (
+              data.experiences.map((exp, i) => (
+                <div key={i} className="mb-4">
+                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-baseline">
+                    <h3 className="font-medium">{exp.position} - {exp.company}</h3>
+                    <span className="text-sm text-gray-600">
+                      {exp.startDate} - {exp.current ? "Present" : exp.endDate}
+                    </span>
+                  </div>
+                  {exp.description && <p className="text-sm mt-1">{exp.description}</p>}
+                </div>
+              ))
+            )}
           </div>
         )}
         

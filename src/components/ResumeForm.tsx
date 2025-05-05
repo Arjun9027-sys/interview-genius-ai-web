@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -9,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
 import { FileText, Plus, Trash2 } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 
 // Define the form schema with zod
 const resumeFormSchema = z.object({
@@ -53,6 +53,7 @@ interface ResumeFormProps {
 
 const ResumeForm = ({ onSave, selectedTemplate }: ResumeFormProps) => {
   const [activeSection, setActiveSection] = useState<string>("personalInfo");
+  const [isFresher, setIsFresher] = useState(false);
   
   const defaultValues: ResumeFormValues = {
     personalInfo: {
@@ -180,6 +181,32 @@ const ResumeForm = ({ onSave, selectedTemplate }: ResumeFormProps) => {
     { id: "skills", label: "Skills" },
     { id: "preview", label: "Preview" },
   ];
+
+  const handleFresherToggle = (checked: boolean) => {
+    setIsFresher(checked);
+    
+    if (checked) {
+      // Clear existing experiences and add a fresher placeholder
+      form.setValue("experiences", [{
+        company: "Fresher",
+        position: "No Prior Work Experience",
+        startDate: new Date().getFullYear().toString(),
+        endDate: "Present",
+        current: true,
+        description: "Currently seeking my first professional opportunity. During my education, I focused on building relevant skills and knowledge in my field of study."
+      }]);
+    } else {
+      // Reset to default experience
+      form.setValue("experiences", [{
+        company: "",
+        position: "",
+        startDate: "",
+        endDate: "",
+        current: false,
+        description: "",
+      }]);
+    }
+  };
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -321,88 +348,148 @@ const ResumeForm = ({ onSave, selectedTemplate }: ResumeFormProps) => {
             <div className="space-y-6">
               <div className="flex justify-between items-center">
                 <h2 className="text-2xl font-semibold">Work Experience</h2>
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  size="sm"
-                  onClick={addExperience}
-                  className="flex items-center gap-1"
-                >
-                  <Plus size={16} /> Add Experience
-                </Button>
+                {!isFresher && (
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    size="sm"
+                    onClick={addExperience}
+                    className="flex items-center gap-1"
+                  >
+                    <Plus size={16} /> Add Experience
+                  </Button>
+                )}
               </div>
 
-              {form.watch("experiences").map((_, index) => (
-                <div key={index} className="border p-4 rounded-lg space-y-4">
-                  <div className="flex justify-between items-center mb-4">
-                    <h3 className="font-medium">Experience {index + 1}</h3>
-                    {form.watch("experiences").length > 1 && (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => removeExperience(index)}
-                        className="text-red-500 hover:text-red-700"
-                      >
-                        <Trash2 size={16} />
-                      </Button>
-                    )}
-                  </div>
-                  <div className="grid md:grid-cols-2 gap-6">
+              <div className="flex items-center space-x-2 p-4 bg-gray-50 rounded-lg">
+                <Switch 
+                  id="fresher-mode" 
+                  checked={isFresher} 
+                  onCheckedChange={handleFresherToggle} 
+                />
+                <label htmlFor="fresher-mode" className="text-sm font-medium">
+                  I am a fresher with no work experience
+                </label>
+              </div>
+
+              {isFresher ? (
+                <div className="border p-4 rounded-lg space-y-4 bg-gray-50">
+                  <h3 className="font-medium">Fresher Status</h3>
+                  <p className="text-gray-600">
+                    As a fresher, you can focus on highlighting your education, skills, projects, and any relevant
+                    coursework or internships. A well-structured resume can showcase your potential even without
+                    formal work experience.
+                  </p>
+                </div>
+              ) : (
+                form.watch("experiences").map((_, index) => (
+                  <div key={index} className="border p-4 rounded-lg space-y-4">
+                    <div className="flex justify-between items-center mb-4">
+                      <h3 className="font-medium">Experience {index + 1}</h3>
+                      {form.watch("experiences").length > 1 && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeExperience(index)}
+                          className="text-red-500 hover:text-red-700"
+                        >
+                          <Trash2 size={16} />
+                        </Button>
+                      )}
+                    </div>
+                    <div className="grid md:grid-cols-2 gap-6">
+                      <FormField
+                        control={form.control}
+                        name={`experiences.${index}.company`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Company*</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Company Name" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name={`experiences.${index}.position`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Position*</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Job Title" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name={`experiences.${index}.startDate`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Start Date*</FormLabel>
+                            <FormControl>
+                              <Input placeholder="MM/YYYY" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name={`experiences.${index}.endDate`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>End Date</FormLabel>
+                            <FormControl>
+                              <Input 
+                                placeholder="MM/YYYY or Present" 
+                                {...field} 
+                                disabled={form.watch(`experiences.${index}.current`)} 
+                                value={form.watch(`experiences.${index}.current`) ? "Present" : field.value}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
                     <FormField
                       control={form.control}
-                      name={`experiences.${index}.company`}
+                      name={`experiences.${index}.current`}
                       render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Company*</FormLabel>
+                        <FormItem className="flex flex-row items-center space-x-3 space-y-0">
                           <FormControl>
-                            <Input placeholder="Company Name" {...field} />
+                            <input
+                              type="checkbox"
+                              className="h-4 w-4"
+                              checked={field.value}
+                              onChange={field.onChange}
+                            />
                           </FormControl>
-                          <FormMessage />
+                          <FormLabel className="font-normal">I currently work here</FormLabel>
                         </FormItem>
                       )}
                     />
 
                     <FormField
                       control={form.control}
-                      name={`experiences.${index}.position`}
+                      name={`experiences.${index}.description`}
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Position*</FormLabel>
+                          <FormLabel>Description</FormLabel>
                           <FormControl>
-                            <Input placeholder="Job Title" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name={`experiences.${index}.startDate`}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Start Date*</FormLabel>
-                          <FormControl>
-                            <Input placeholder="MM/YYYY" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name={`experiences.${index}.endDate`}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>End Date</FormLabel>
-                          <FormControl>
-                            <Input 
-                              placeholder="MM/YYYY or Present" 
-                              {...field} 
-                              disabled={form.watch(`experiences.${index}.current`)} 
-                              value={form.watch(`experiences.${index}.current`) ? "Present" : field.value}
+                            <Textarea
+                              placeholder="Describe your responsibilities and achievements..."
+                              className="min-h-[100px]"
+                              {...field}
                             />
                           </FormControl>
                           <FormMessage />
@@ -410,44 +497,8 @@ const ResumeForm = ({ onSave, selectedTemplate }: ResumeFormProps) => {
                       )}
                     />
                   </div>
-
-                  <FormField
-                    control={form.control}
-                    name={`experiences.${index}.current`}
-                    render={({ field }) => (
-                      <FormItem className="flex flex-row items-center space-x-3 space-y-0">
-                        <FormControl>
-                          <input
-                            type="checkbox"
-                            className="h-4 w-4"
-                            checked={field.value}
-                            onChange={field.onChange}
-                          />
-                        </FormControl>
-                        <FormLabel className="font-normal">I currently work here</FormLabel>
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name={`experiences.${index}.description`}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Description</FormLabel>
-                        <FormControl>
-                          <Textarea
-                            placeholder="Describe your responsibilities and achievements..."
-                            className="min-h-[100px]"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-              ))}
+                ))
+              )}
             </div>
           )}
 
