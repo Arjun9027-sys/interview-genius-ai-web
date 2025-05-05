@@ -24,6 +24,7 @@ const CodeEditor = ({
 }: CodeEditorProps) => {
   const editorRef = useRef(null);
   const [isRunning, setIsRunning] = useState(false);
+  const [output, setOutput] = useState<string[]>([]);
 
   const handleEditorDidMount = (editor: any) => {
     editorRef.current = editor;
@@ -66,32 +67,72 @@ const CodeEditor = ({
     if (!editorRef.current) return;
     
     setIsRunning(true);
+    setOutput([]);
 
     // Get current code
     const codeToRun = editorRef.current.getValue();
     
-    // Simulate code execution with a delay
     setTimeout(() => {
       setIsRunning(false);
       
-      // Display output message
-      let outputMessage = "Code execution is not implemented yet. This is a simulated response.";
-      
-      // Add language-specific messages for better UX
-      if (language.toLowerCase() === 'javascript') {
-        outputMessage = "JavaScript code execution would happen here. In a real implementation, we could use a secure sandbox to run JavaScript.";
-      } else if (language.toLowerCase() === 'python') {
-        outputMessage = "Python code execution would happen here. In a real implementation, this would connect to a Python interpreter API.";
-      } else if (language.toLowerCase() === 'java') {
-        outputMessage = "Java code execution would happen here. In a real implementation, this would compile and run Java code.";
+      try {
+        // For JavaScript, we can actually execute the code
+        if (language.toLowerCase() === 'javascript') {
+          // Create a sandbox to capture console.log output
+          const originalConsoleLog = console.log;
+          const logs: string[] = [];
+          
+          // Override console.log to capture outputs
+          console.log = (...args) => {
+            logs.push(args.map(arg => 
+              typeof arg === 'object' ? JSON.stringify(arg) : String(arg)
+            ).join(' '));
+          };
+          
+          // Execute the code
+          try {
+            // Use Function constructor to evaluate code
+            const executeFn = new Function(codeToRun);
+            executeFn();
+            
+            // Display the captured logs
+            if (logs.length > 0) {
+              setOutput(logs);
+              toast.success(`Code executed successfully`, {
+                description: logs.join('\n'),
+                duration: 5000
+              });
+            } else {
+              toast.info(`Code executed with no output`, {
+                description: "Your code ran successfully but didn't output anything via console.log",
+                duration: 3000
+              });
+            }
+          } catch (execError) {
+            toast.error(`Runtime Error`, {
+              description: String(execError),
+              duration: 5000
+            });
+          }
+          
+          // Restore the original console.log
+          console.log = originalConsoleLog;
+        } else {
+          // For other languages, show a simulation message
+          let outputMessage = `Code execution for ${language} is not implemented yet. This would require a backend service.`;
+          
+          toast.info(`Execution Output (${language})`, {
+            description: outputMessage,
+            duration: 4000
+          });
+        }
+      } catch (error) {
+        toast.error("Error executing code", {
+          description: String(error),
+          duration: 5000
+        });
       }
-      
-      // Show output in toast
-      toast.info(`Execution Output (${language})`, {
-        description: outputMessage,
-        duration: 4000
-      });
-    }, 1500);
+    }, 500);
   };
 
   return (
@@ -129,6 +170,15 @@ const CodeEditor = ({
           theme="vs-dark"
         />
       </div>
+      
+      {output.length > 0 && (
+        <div className="bg-black text-green-400 p-3 border-t border-gray-700 font-mono text-sm overflow-auto max-h-32">
+          <div className="text-xs text-gray-400 mb-1">Output:</div>
+          {output.map((line, index) => (
+            <div key={index}>{line}</div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };
