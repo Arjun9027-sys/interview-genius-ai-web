@@ -5,7 +5,7 @@ import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { FileText } from 'lucide-react';
+import { FileText, Download, Share2 } from 'lucide-react';
 import ResumeForm from '@/components/ResumeForm';
 import ResumePreview from '@/components/ResumePreview';
 import { toast } from '@/hooks/use-toast';
@@ -41,17 +41,47 @@ interface ResumeData {
 }
 
 const ResumeBuilder = () => {
+  // Define resume templates with more properties
   const resumeTemplates = [
-    { name: "Professional", color: "bg-gray-200" },
-    { name: "Modern", color: "bg-blue-200" },
-    { name: "Creative", color: "bg-purple-200" },
-    { name: "Minimal", color: "bg-green-200" },
+    { 
+      name: "Professional", 
+      color: "bg-gray-200", 
+      accent: "border-gray-700",
+      textColor: "text-gray-800",
+      headerBg: "bg-gray-100",
+      description: "Clean, minimal design with a focus on content and readability."
+    },
+    { 
+      name: "Modern", 
+      color: "bg-blue-200", 
+      accent: "border-blue-500",
+      textColor: "text-blue-900",
+      headerBg: "bg-blue-50",
+      description: "Contemporary design with bold headings and modern typography."
+    },
+    { 
+      name: "Creative", 
+      color: "bg-purple-200", 
+      accent: "border-purple-500",
+      textColor: "text-purple-900",
+      headerBg: "bg-purple-50",
+      description: "Unique layout with colorful accents for creative professionals."
+    },
+    { 
+      name: "Minimal", 
+      color: "bg-green-200", 
+      accent: "border-green-500",
+      textColor: "text-green-900",
+      headerBg: "bg-green-50",
+      description: "Ultra-minimalist design that lets your experience speak for itself."
+    },
   ];
 
   const [selectedTemplate, setSelectedTemplate] = useState(resumeTemplates[0].name);
   const [isBuilding, setIsBuilding] = useState(false);
   const [resumeData, setResumeData] = useState<ResumeData | null>(null);
   const [activeTab, setActiveTab] = useState("choose-template");
+  const [pdfGenerating, setPdfGenerating] = useState(false);
 
   // Handle template selection
   const handleSelectTemplate = (template: string) => {
@@ -71,17 +101,56 @@ const ResumeBuilder = () => {
 
   // Handle resume download
   const handleDownloadResume = () => {
+    setPdfGenerating(true);
     toast({
       title: "Download started",
       description: "Your resume is being prepared as a PDF for download.",
     });
     // In a real implementation, we'd call a PDF generation service here
     setTimeout(() => {
+      setPdfGenerating(false);
       toast({
         title: "Resume downloaded",
         description: "Your resume has been downloaded successfully.",
       });
+      
+      // Simulate download by creating a blob and triggering download
+      // In a real implementation, this would be a PDF file
+      const dummyBlob = new Blob(['PDF Content'], { type: 'application/pdf' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(dummyBlob);
+      link.download = `${resumeData?.personalInfo.fullName || 'Resume'}_${selectedTemplate}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     }, 2000);
+  };
+
+  // Handle resume sharing
+  const handleShareResume = () => {
+    toast({
+      title: "Sharing options",
+      description: "Choose how you want to share your resume",
+    });
+
+    // Check if Web Share API is available
+    if (navigator.share) {
+      navigator.share({
+        title: `${resumeData?.personalInfo.fullName || 'My'} Resume`,
+        text: 'Check out my professional resume created with Resume Builder',
+      }).catch(() => {
+        toast({
+          title: "Sharing cancelled",
+          description: "You cancelled the share operation"
+        });
+      });
+    } else {
+      // Fallback for browsers that don't support Web Share API
+      toast({
+        title: "Share via link",
+        description: "Resume link copied to clipboard!",
+      });
+    }
   };
 
   const resetBuilder = () => {
@@ -94,6 +163,11 @@ const ResumeBuilder = () => {
   const startNewResume = () => {
     setIsBuilding(true);
     setActiveTab("choose-template");
+  };
+
+  // Get template object
+  const getTemplateObject = () => {
+    return resumeTemplates.find(t => t.name === selectedTemplate) || resumeTemplates[0];
   };
 
   return (
@@ -157,15 +231,15 @@ const ResumeBuilder = () => {
                     {resumeTemplates.map((template, index) => (
                       <Card 
                         key={index} 
-                        className={`card-hover cursor-pointer overflow-hidden ${selectedTemplate === template.name ? 'ring-2 ring-custom-purple' : ''}`}
+                        className={`card-hover cursor-pointer overflow-hidden transition-all duration-200 transform hover:scale-105 ${selectedTemplate === template.name ? 'ring-2 ring-custom-purple shadow-lg' : ''}`}
                         onClick={() => handleSelectTemplate(template.name)}
                       >
-                        <div className={`${template.color} h-48 flex items-center justify-center`}>
-                          <FileText className="h-16 w-16 text-gray-600 opacity-50" />
+                        <div className={`${template.color} h-48 flex items-center justify-center border-b-4 ${template.accent}`}>
+                          <FileText className={`h-16 w-16 ${template.textColor} opacity-50`} />
                         </div>
                         <CardContent className="p-4">
                           <h3 className="font-medium text-lg">{template.name}</h3>
-                          <p className="text-gray-500 text-sm">Template</p>
+                          <p className="text-gray-500 text-sm mt-1">{template.description}</p>
                         </CardContent>
                       </Card>
                     ))}
@@ -196,21 +270,29 @@ const ResumeBuilder = () => {
                       <ResumePreview 
                         data={resumeData} 
                         template={selectedTemplate} 
+                        templateStyles={getTemplateObject()} 
                         onDownload={handleDownloadResume} 
                       />
-                      <div className="mt-8 text-center">
+                      <div className="mt-8 text-center flex flex-wrap justify-center gap-4">
                         <Button 
                           onClick={() => setActiveTab("build-resume")} 
                           variant="outline" 
-                          className="mr-4"
                         >
                           Edit Resume
                         </Button>
                         <Button 
                           onClick={handleDownloadResume} 
                           className="bg-custom-purple hover:bg-custom-purple-dark"
+                          disabled={pdfGenerating}
                         >
-                          <FileText className="mr-2 h-4 w-4" /> Download Resume
+                          <Download className="mr-2 h-4 w-4" /> 
+                          {pdfGenerating ? "Generating PDF..." : "Download PDF"}
+                        </Button>
+                        <Button 
+                          onClick={handleShareResume} 
+                          variant="outline"
+                        >
+                          <Share2 className="mr-2 h-4 w-4" /> Share Resume
                         </Button>
                       </div>
                     </div>
