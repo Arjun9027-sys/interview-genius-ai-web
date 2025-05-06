@@ -59,6 +59,7 @@ const AiInterview = () => {
   const [isThinking, setIsThinking] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   
   // Speech utilities
   const speechToTextRef = useRef<SpeechToText | null>(null);
@@ -101,7 +102,7 @@ const AiInterview = () => {
   
   const jobCategories = Object.keys(jobSkillsByCategory);
   
-  const startInterview = () => {
+  const startInterview = async () => {
     if (!selectedCategory) {
       toast.error('Please select a job category first');
       return;
@@ -112,22 +113,31 @@ const AiInterview = () => {
       return;
     }
     
-    // Initialize interview session with all selected criteria
-    const session = interviewService.startSession(
-      selectedCategory, 
-      selectedSkill,
-      selectedLanguage || undefined
-    );
+    setIsLoading(true);
     
-    const firstQuestion = interviewService.getCurrentQuestion();
-    setCurrentQuestion(firstQuestion);
-    
-    // Start the interview
-    setIsStarted(true);
-    
-    // Speak the first question
-    if (firstQuestion && textToSpeechRef.current) {
-      textToSpeechRef.current.speak(firstQuestion.text);
+    try {
+      // Initialize interview session with all selected criteria
+      const session = await interviewService.startSession(
+        selectedCategory, 
+        selectedSkill,
+        selectedLanguage || undefined
+      );
+      
+      const firstQuestion = interviewService.getCurrentQuestion();
+      setCurrentQuestion(firstQuestion);
+      
+      // Start the interview
+      setIsStarted(true);
+      
+      // Speak the first question
+      if (firstQuestion && textToSpeechRef.current) {
+        textToSpeechRef.current.speak(firstQuestion.text);
+      }
+    } catch (error) {
+      console.error("Failed to start interview:", error);
+      toast.error("Failed to connect to interview service. Please try again.");
+    } finally {
+      setIsLoading(false);
     }
   };
   
@@ -259,7 +269,7 @@ const AiInterview = () => {
                   <div className="space-y-2">
                     <Label htmlFor="job-category">Select Job Category</Label>
                     <Select 
-                      disabled={isStarted}
+                      disabled={isStarted || isLoading}
                       value={selectedCategory || ""}
                       onValueChange={(value) => setSelectedCategory(value)}
                     >
@@ -280,7 +290,7 @@ const AiInterview = () => {
                     <div className="space-y-2">
                       <Label htmlFor="job-skill">Select Job Skill</Label>
                       <Select 
-                        disabled={isStarted || !selectedCategory}
+                        disabled={isStarted || !selectedCategory || isLoading}
                         value={selectedSkill || ""}
                         onValueChange={(value) => setSelectedSkill(value)}
                       >
@@ -302,7 +312,7 @@ const AiInterview = () => {
                     <div className="space-y-2">
                       <Label htmlFor="technical-language">Select Technical Language/Framework</Label>
                       <Select 
-                        disabled={isStarted || !selectedSkill}
+                        disabled={isStarted || !selectedSkill || isLoading}
                         value={selectedLanguage || ""}
                         onValueChange={(value) => setSelectedLanguage(value)}
                       >
@@ -323,9 +333,15 @@ const AiInterview = () => {
                   <Button 
                     className="w-full bg-gradient-to-r from-custom-purple to-custom-blue-bright button-glow shadow-md"
                     onClick={startInterview}
-                    disabled={!selectedCategory || !selectedSkill || isStarted}
+                    disabled={!selectedCategory || !selectedSkill || isStarted || isLoading}
                   >
-                    <Play className="h-4 w-4 mr-2" /> Start Interview
+                    {isLoading ? (
+                      "Connecting..."
+                    ) : (
+                      <>
+                        <Play className="h-4 w-4 mr-2" /> Start Interview
+                      </>
+                    )}
                   </Button>
                 </div>
               </div>

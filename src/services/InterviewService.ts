@@ -1,3 +1,4 @@
+
 import { toast } from "sonner";
 
 // Types for our interview system
@@ -115,20 +116,62 @@ export const jobSkillsByCategory: Record<string, string[]> = {
   ]
 };
 
+// Replace with your API URL
+const API_BASE_URL = "/api"; // You'll replace this with your actual backend URL
+
 class InterviewService {
   private session: InterviewSession | null = null;
 
-  startSession(jobCategory: string, jobSkill: string, technicalLanguage?: string): InterviewSession {
-    // Initialize a new interview session
-    this.session = {
-      jobCategory,
-      jobSkill,
-      technicalLanguage,
-      currentQuestionIndex: 0,
-      questions: this.getInitialQuestions(jobCategory, jobSkill, technicalLanguage),
-      responses: []
-    };
-    return this.session;
+  async startSession(jobCategory: string, jobSkill: string, technicalLanguage?: string): Promise<InterviewSession> {
+    try {
+      // Call backend API to start a new session
+      const response = await fetch(`${API_BASE_URL}/interview/start`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          jobCategory,
+          jobSkill,
+          technicalLanguage,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to start interview session");
+      }
+
+      const data = await response.json();
+      
+      // Initialize a new interview session with the returned questions
+      this.session = {
+        jobCategory,
+        jobSkill,
+        technicalLanguage,
+        currentQuestionIndex: 0,
+        questions: data.questions || [],
+        responses: []
+      };
+      
+      // If no questions returned, use fallback questions
+      if (this.session.questions.length === 0) {
+        this.session.questions = this.getFallbackQuestions(jobCategory, jobSkill, technicalLanguage);
+      }
+      
+      return this.session;
+    } catch (error) {
+      console.error("Error starting interview session:", error);
+      // Fallback to local questions if the API call fails
+      this.session = {
+        jobCategory,
+        jobSkill,
+        technicalLanguage,
+        currentQuestionIndex: 0,
+        questions: this.getFallbackQuestions(jobCategory, jobSkill, technicalLanguage),
+        responses: []
+      };
+      return this.session;
+    }
   }
 
   getCurrentSession(): InterviewSession | null {
@@ -155,27 +198,66 @@ class InterviewService {
       text
     });
     
-    // Move to the next question or generate a follow-up
-    this.session.currentQuestionIndex++;
-    
-    // If we've used all pre-defined questions, generate a follow-up
-    if (this.session.currentQuestionIndex >= this.session.questions.length) {
-      try {
-        const newQuestion = await this.generateFollowUpQuestion();
-        if (newQuestion) {
-          this.session.questions.push(newQuestion);
-        }
-      } catch (error) {
-        console.error("Failed to generate follow-up question:", error);
-        toast.error("Failed to generate follow-up question");
-        return null;
+    try {
+      // Send the response to the backend and get the next question
+      const response = await fetch(`${API_BASE_URL}/interview/response`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          jobCategory: this.session.jobCategory,
+          jobSkill: this.session.jobSkill,
+          technicalLanguage: this.session.technicalLanguage,
+          currentQuestionId: currentQuestion.id,
+          userResponse: text,
+          responseHistory: this.session.responses
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to process response");
       }
+
+      const data = await response.json();
+      
+      // Move to the next question
+      this.session.currentQuestionIndex++;
+      
+      // If we've used all pre-defined questions or received a follow-up question
+      if (this.session.currentQuestionIndex >= this.session.questions.length) {
+        if (data.nextQuestion) {
+          // Add the next question from the API
+          this.session.questions.push(data.nextQuestion);
+        } else {
+          // Generate a fallback follow-up question if the API doesn't provide one
+          const fallbackQuestion = this.generateFallbackFollowUpQuestion();
+          if (fallbackQuestion) {
+            this.session.questions.push(fallbackQuestion);
+          }
+        }
+      }
+      
+      return this.getCurrentQuestion();
+    } catch (error) {
+      console.error("Failed to submit response:", error);
+      toast.error("Failed to submit response. Please try again.");
+      
+      // Fallback to local next question if API fails
+      this.session.currentQuestionIndex++;
+      
+      if (this.session.currentQuestionIndex >= this.session.questions.length) {
+        const fallbackQuestion = this.generateFallbackFollowUpQuestion();
+        if (fallbackQuestion) {
+          this.session.questions.push(fallbackQuestion);
+        }
+      }
+      
+      return this.getCurrentQuestion();
     }
-    
-    return this.getCurrentQuestion();
   }
 
-  private getInitialQuestions(jobCategory: string, jobSkill: string, technicalLanguage?: string): InterviewQuestion[] {
+  private getFallbackQuestions(jobCategory: string, jobSkill: string, technicalLanguage?: string): InterviewQuestion[] {
     // Initial questions based on job category
     const commonQuestions = [
       {
@@ -252,47 +334,63 @@ class InterviewService {
     ];
   }
 
-  private async generateFollowUpQuestion(): Promise<InterviewQuestion | null> {
+  private generateFallbackFollowUpQuestion(): InterviewQuestion | null {
     if (!this.session) return null;
     
-    // Instead of using OpenAI API directly, this function would now connect to your own backend
-    // For now, we'll create a placeholder follow-up question to maintain functionality
+    const jobCategory = this.session.jobCategory;
+    const jobSkill = this.session.jobSkill;
+    const technicalLanguage = this.session.technicalLanguage;
     
-    try {
-      // This mock function simulates what your backend would do
-      const jobCategory = this.session.jobCategory;
-      const jobSkill = this.session.jobSkill;
-      const technicalLanguage = this.session.technicalLanguage;
-      
-      // Create a generic follow-up question based on the session data
-      const followUpText = `Tell me more about your experience with ${jobSkill} ${technicalLanguage ? 
-        `using ${technicalLanguage}` : 
-        ''} in the ${jobCategory} field. What specific challenges have you encountered?`;
-      
-      return {
-        id: `gen-${this.session.questions.length + 1}`,
-        text: followUpText,
-        category: "follow_up"
-      };
-    } catch (error) {
-      console.error("Error generating follow-up question:", error);
-      throw error;
-    }
+    // Create a generic follow-up question based on the session data
+    const followUpText = `Tell me more about your experience with ${jobSkill} ${technicalLanguage ? 
+      `using ${technicalLanguage}` : 
+      ''} in the ${jobCategory} field. What specific challenges have you encountered?`;
+    
+    return {
+      id: `gen-${this.session.questions.length + 1}`,
+      text: followUpText,
+      category: "follow_up"
+    };
   }
 
-  getFeedback(): Promise<string> {
+  async getFeedback(): Promise<string> {
     if (!this.session) {
       return Promise.reject("No active session");
     }
     
-    // Similar to generateFollowUpQuestion, this would connect to your backend
-    // For now, we'll create a placeholder feedback response
+    try {
+      // Call backend API to get feedback
+      const response = await fetch(`${API_BASE_URL}/interview/feedback`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          jobCategory: this.session.jobCategory,
+          jobSkill: this.session.jobSkill,
+          technicalLanguage: this.session.technicalLanguage,
+          responses: this.session.responses,
+          questions: this.session.questions
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to get feedback");
+      }
+
+      const data = await response.json();
+      return data.feedback || this.generateFallbackFeedback();
+    } catch (error) {
+      console.error("Error getting feedback:", error);
+      // Return fallback feedback if the API call fails
+      return this.generateFallbackFeedback();
+    }
+  }
+
+  private generateFallbackFeedback(): string {
+    const { jobCategory, jobSkill, technicalLanguage } = this.session!;
     
-    return new Promise((resolve) => {
-      // Create a generic feedback based on session data
-      const { jobCategory, jobSkill, technicalLanguage, questions, responses } = this.session!;
-      
-      const feedbackText = `
+    return `
 # Interview Feedback
 
 ## Overview
@@ -312,11 +410,7 @@ You've completed an interview for a ${jobCategory} position focusing on ${jobSki
 - Practice explaining technical concepts in a clear, concise manner
 
 Keep practicing and refining your interview skills!
-      `;
-      
-      // Return the feedback text after a short delay to simulate API call
-      setTimeout(() => resolve(feedbackText), 500);
-    });
+    `;
   }
 }
 
