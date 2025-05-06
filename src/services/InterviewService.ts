@@ -116,14 +116,16 @@ export const jobSkillsByCategory: Record<string, string[]> = {
   ]
 };
 
-// Replace with your API URL
-const API_BASE_URL = "/api"; // You'll replace this with your actual backend URL
+// Replace with your API URL - update this to your actual backend URL
+const API_BASE_URL = "/api"; 
 
 class InterviewService {
   private session: InterviewSession | null = null;
 
   async startSession(jobCategory: string, jobSkill: string, technicalLanguage?: string): Promise<InterviewSession> {
     try {
+      console.log("Starting interview session with:", { jobCategory, jobSkill, technicalLanguage });
+      
       // Call backend API to start a new session
       const response = await fetch(`${API_BASE_URL}/interview/start`, {
         method: "POST",
@@ -137,11 +139,16 @@ class InterviewService {
         }),
       });
 
+      console.log("Backend response status:", response.status);
+      
       if (!response.ok) {
-        throw new Error("Failed to start interview session");
+        const errorText = await response.text();
+        console.error("API Error:", response.status, errorText);
+        throw new Error(`Failed to start interview session: ${response.status} ${errorText}`);
       }
 
       const data = await response.json();
+      console.log("Received data from backend:", data);
       
       // Initialize a new interview session with the returned questions
       this.session = {
@@ -155,12 +162,15 @@ class InterviewService {
       
       // If no questions returned, use fallback questions
       if (this.session.questions.length === 0) {
+        console.warn("No questions returned from API, using fallback questions");
         this.session.questions = this.getFallbackQuestions(jobCategory, jobSkill, technicalLanguage);
       }
       
       return this.session;
     } catch (error) {
       console.error("Error starting interview session:", error);
+      toast.error(`Failed to connect to interview service: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      
       // Fallback to local questions if the API call fails
       this.session = {
         jobCategory,
@@ -191,6 +201,7 @@ class InterviewService {
     if (!this.session || !this.getCurrentQuestion()) return null;
     
     const currentQuestion = this.getCurrentQuestion()!;
+    console.log("Submitting response for question:", currentQuestion);
     
     // Save the response
     this.session.responses.push({
@@ -215,11 +226,16 @@ class InterviewService {
         }),
       });
 
+      console.log("Response submission status:", response.status);
+      
       if (!response.ok) {
-        throw new Error("Failed to process response");
+        const errorText = await response.text();
+        console.error("API Error during response submission:", response.status, errorText);
+        throw new Error(`Failed to process response: ${response.status} ${errorText}`);
       }
 
       const data = await response.json();
+      console.log("Received next question data:", data);
       
       // Move to the next question
       this.session.currentQuestionIndex++;
@@ -228,9 +244,11 @@ class InterviewService {
       if (this.session.currentQuestionIndex >= this.session.questions.length) {
         if (data.nextQuestion) {
           // Add the next question from the API
+          console.log("Adding follow-up question from API:", data.nextQuestion);
           this.session.questions.push(data.nextQuestion);
         } else {
           // Generate a fallback follow-up question if the API doesn't provide one
+          console.warn("No next question from API, generating fallback");
           const fallbackQuestion = this.generateFallbackFollowUpQuestion();
           if (fallbackQuestion) {
             this.session.questions.push(fallbackQuestion);
@@ -241,7 +259,7 @@ class InterviewService {
       return this.getCurrentQuestion();
     } catch (error) {
       console.error("Failed to submit response:", error);
-      toast.error("Failed to submit response. Please try again.");
+      toast.error(`Failed to get next question: ${error instanceof Error ? error.message : 'Unknown error'}`);
       
       // Fallback to local next question if API fails
       this.session.currentQuestionIndex++;
@@ -359,6 +377,8 @@ class InterviewService {
     }
     
     try {
+      console.log("Getting feedback for interview session");
+      
       // Call backend API to get feedback
       const response = await fetch(`${API_BASE_URL}/interview/feedback`, {
         method: "POST",
@@ -374,14 +394,22 @@ class InterviewService {
         }),
       });
 
+      console.log("Feedback API response status:", response.status);
+      
       if (!response.ok) {
-        throw new Error("Failed to get feedback");
+        const errorText = await response.text();
+        console.error("API Error during feedback request:", response.status, errorText);
+        throw new Error(`Failed to get feedback: ${response.status} ${errorText}`);
       }
 
       const data = await response.json();
+      console.log("Received feedback data:", data);
+      
       return data.feedback || this.generateFallbackFeedback();
     } catch (error) {
       console.error("Error getting feedback:", error);
+      toast.error(`Failed to get feedback: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      
       // Return fallback feedback if the API call fails
       return this.generateFallbackFeedback();
     }
