@@ -17,14 +17,23 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
-import { interviewService, InterviewQuestion, InterviewResponse } from '@/services/InterviewService';
+import { interviewService, InterviewQuestion, InterviewResponse, jobSkillsByCategory } from '@/services/InterviewService';
 import { SpeechToText, TextToSpeech } from '@/utils/SpeechUtils';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const AiInterview = () => {
   // Basic state
   const [isStarted, setIsStarted] = useState(false);
   const [isMicOn, setIsMicOn] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedSkill, setSelectedSkill] = useState<string | null>(null);
+  const [availableSkills, setAvailableSkills] = useState<string[]>([]);
   const [currentQuestion, setCurrentQuestion] = useState<InterviewQuestion | null>(null);
   const [userResponse, setUserResponse] = useState('');
   const [interimResponse, setInterimResponse] = useState('');
@@ -63,17 +72,16 @@ const AiInterview = () => {
     };
   }, []);
   
-  const jobCategories = [
-    "Software Engineering",
-    "Data Science",
-    "Product Management",
-    "Marketing",
-    "Sales",
-    "Customer Success",
-    "Design",
-    "Finance",
-    "Human Resources"
-  ];
+  // Update available skills when job category changes
+  useEffect(() => {
+    if (selectedCategory) {
+      const skills = jobSkillsByCategory[selectedCategory] || [];
+      setAvailableSkills(skills);
+      setSelectedSkill(null);
+    }
+  }, [selectedCategory]);
+  
+  const jobCategories = Object.keys(jobSkillsByCategory);
   
   const saveApiKey = () => {
     if (!apiKey.trim()) {
@@ -92,6 +100,11 @@ const AiInterview = () => {
       return;
     }
     
+    if (!selectedSkill) {
+      toast.error('Please select a specific job skill');
+      return;
+    }
+    
     // Check if API key is available
     if (!interviewService.getApiKey()) {
       setIsAPIDialogOpen(true);
@@ -99,7 +112,7 @@ const AiInterview = () => {
     }
     
     // Initialize interview session
-    const session = interviewService.startSession(selectedCategory);
+    const session = interviewService.startSession(selectedCategory, selectedSkill);
     const firstQuestion = interviewService.getCurrentQuestion();
     setCurrentQuestion(firstQuestion);
     
@@ -234,23 +247,58 @@ const AiInterview = () => {
           <div className="container mx-auto px-4">
             <div className="flex flex-col lg:flex-row gap-12">
               <div className="lg:w-1/3">
-                <h2 className="text-2xl font-bold mb-6 gradient-text">Select Job Category</h2>
-                <div className="space-y-2">
-                  {jobCategories.map((category, index) => (
-                    <Button 
-                      key={index} 
-                      variant={selectedCategory === category ? "default" : "outline"} 
-                      className={`w-full justify-start text-left ${
-                        selectedCategory === category 
-                          ? 'bg-gradient-to-r from-custom-purple to-custom-blue-bright text-white' 
-                          : 'border border-gray-200 hover:border-custom-purple hover:text-custom-purple'
-                      }`}
-                      onClick={() => setSelectedCategory(category)}
+                <h2 className="text-2xl font-bold mb-6 gradient-text">Interview Configuration</h2>
+                
+                <div className="space-y-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="job-category">Select Job Category</Label>
+                    <Select 
                       disabled={isStarted}
+                      value={selectedCategory || ""}
+                      onValueChange={(value) => setSelectedCategory(value)}
                     >
-                      {category}
-                    </Button>
-                  ))}
+                      <SelectTrigger id="job-category" className="w-full">
+                        <SelectValue placeholder="Select job category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {jobCategories.map((category, index) => (
+                          <SelectItem key={index} value={category}>
+                            {category}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  {selectedCategory && (
+                    <div className="space-y-2">
+                      <Label htmlFor="job-skill">Select Job Skill</Label>
+                      <Select 
+                        disabled={isStarted || !selectedCategory}
+                        value={selectedSkill || ""}
+                        onValueChange={(value) => setSelectedSkill(value)}
+                      >
+                        <SelectTrigger id="job-skill" className="w-full">
+                          <SelectValue placeholder="Select specific skill" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {availableSkills.map((skill, index) => (
+                            <SelectItem key={index} value={skill}>
+                              {skill}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                  
+                  <Button 
+                    className="w-full bg-gradient-to-r from-custom-purple to-custom-blue-bright button-glow shadow-md"
+                    onClick={startInterview}
+                    disabled={!selectedCategory || !selectedSkill || isStarted || !interviewService.getApiKey()}
+                  >
+                    <Play className="h-4 w-4 mr-2" /> Start Interview
+                  </Button>
                 </div>
               </div>
               
@@ -260,8 +308,8 @@ const AiInterview = () => {
                     <CardTitle className="text-2xl gradient-text">AI Interview Simulator</CardTitle>
                     <CardDescription>
                       {isStarted 
-                        ? "Answer the questions naturally as you would in a real interview."
-                        : "Start an interview session with our AI interviewer to practice your responses."}
+                        ? `Interviewing for: ${selectedCategory} - ${selectedSkill}`
+                        : "Configure your interview settings on the left, then start an interview session."}
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
@@ -352,15 +400,8 @@ const AiInterview = () => {
                           </div>
                           <p className="text-xl font-medium text-gray-700 mb-2">Ready to begin your practice interview?</p>
                           <p className="text-gray-600 mb-6 text-center">
-                            You'll receive questions based on the job category you select.
+                            Select job category and skill on the left, then click Start Interview.
                           </p>
-                          <Button 
-                            className="bg-gradient-to-r from-custom-purple to-custom-blue-bright button-glow shadow-md"
-                            onClick={startInterview}
-                            disabled={!selectedCategory || !interviewService.getApiKey()}
-                          >
-                            <Play className="h-4 w-4 mr-2" /> Start Interview
-                          </Button>
                         </div>
                       )}
                     </div>

@@ -1,4 +1,3 @@
-
 import { toast } from "sonner";
 
 // Types for our interview system
@@ -15,10 +14,105 @@ export interface InterviewResponse {
 
 export interface InterviewSession {
   jobCategory: string;
+  jobSkill: string;
   currentQuestionIndex: number;
   questions: InterviewQuestion[];
   responses: InterviewResponse[];
 }
+
+// Job skill definitions grouped by job category
+export const jobSkillsByCategory: Record<string, string[]> = {
+  "Software Engineering": [
+    "Frontend Development",
+    "Backend Development",
+    "Full Stack Development",
+    "Mobile App Development",
+    "DevOps",
+    "Cloud Architecture",
+    "Database Management",
+    "UI/UX Development"
+  ],
+  "Data Science": [
+    "Machine Learning",
+    "Data Analysis",
+    "Big Data Processing",
+    "Statistical Modeling",
+    "Natural Language Processing",
+    "Computer Vision",
+    "Data Visualization",
+    "Data Engineering"
+  ],
+  "Product Management": [
+    "Product Strategy",
+    "User Research",
+    "Market Analysis",
+    "Agile Methodologies",
+    "Roadmap Planning",
+    "Product Analytics",
+    "Cross-functional Leadership",
+    "Product Launch"
+  ],
+  "Marketing": [
+    "Digital Marketing",
+    "Content Strategy",
+    "SEO/SEM",
+    "Social Media Marketing",
+    "Marketing Analytics",
+    "Brand Management",
+    "Email Marketing",
+    "Growth Marketing"
+  ],
+  "Sales": [
+    "B2B Sales",
+    "B2C Sales",
+    "Sales Strategy",
+    "Account Management",
+    "Lead Generation",
+    "Negotiation",
+    "CRM Management",
+    "Sales Analytics"
+  ],
+  "Customer Success": [
+    "Customer Support",
+    "Client Relationship Management",
+    "User Onboarding",
+    "Retention Strategies",
+    "Technical Support",
+    "Customer Feedback Analysis",
+    "Customer Education",
+    "Service Quality Assurance"
+  ],
+  "Design": [
+    "UI Design",
+    "UX Design",
+    "Visual Design",
+    "Interaction Design",
+    "Product Design",
+    "Design Systems",
+    "Usability Testing",
+    "Graphic Design"
+  ],
+  "Finance": [
+    "Financial Analysis",
+    "Investment Management",
+    "Financial Planning",
+    "Risk Assessment",
+    "Accounting",
+    "Financial Reporting",
+    "Budgeting",
+    "Forecasting"
+  ],
+  "Human Resources": [
+    "Talent Acquisition",
+    "Employee Relations",
+    "Performance Management",
+    "Compensation & Benefits",
+    "HR Operations",
+    "Learning & Development",
+    "Diversity & Inclusion",
+    "Organizational Development"
+  ]
+};
 
 class InterviewService {
   private apiKey: string | null = null;
@@ -36,12 +130,13 @@ class InterviewService {
     return this.apiKey;
   }
 
-  startSession(jobCategory: string): InterviewSession {
+  startSession(jobCategory: string, jobSkill: string): InterviewSession {
     // Initialize a new interview session
     this.session = {
       jobCategory,
+      jobSkill,
       currentQuestionIndex: 0,
-      questions: this.getInitialQuestions(jobCategory),
+      questions: this.getInitialQuestions(jobCategory, jobSkill),
       responses: []
     };
     return this.session;
@@ -91,12 +186,12 @@ class InterviewService {
     return this.getCurrentQuestion();
   }
 
-  private getInitialQuestions(jobCategory: string): InterviewQuestion[] {
+  private getInitialQuestions(jobCategory: string, jobSkill: string): InterviewQuestion[] {
     // Initial questions based on job category
     const commonQuestions = [
       {
         id: "q1",
-        text: "Tell me about your background and experience in this field.",
+        text: `Tell me about your background and experience in ${jobCategory}, particularly with ${jobSkill}.`,
         category: "general"
       },
       {
@@ -111,41 +206,41 @@ class InterviewService {
       }
     ];
     
-    // Add category-specific questions
+    // Add category-specific and skill-specific questions
     const categoryQuestions: Record<string, InterviewQuestion[]> = {
       "Software Engineering": [
         {
           id: "se1",
-          text: "Describe a complex technical challenge you've faced and how you solved it.",
+          text: `Describe a complex ${jobSkill} challenge you've faced and how you solved it.`,
           category: "technical"
         },
         {
           id: "se2",
-          text: "How do you stay updated with the latest technologies and programming practices?",
+          text: `How do you stay updated with the latest trends and practices in ${jobSkill}?`,
           category: "learning"
         }
       ],
       "Data Science": [
         {
           id: "ds1",
-          text: "Explain a data project where you derived actionable insights that impacted business decisions.",
+          text: `Explain a data project involving ${jobSkill} where you derived actionable insights.`,
           category: "technical"
         },
         {
           id: "ds2",
-          text: "How do you ensure the statistical validity of your models?",
+          text: `How do you ensure the statistical validity of your models when working with ${jobSkill}?`,
           category: "methodology"
         }
       ],
       "Product Management": [
         {
           id: "pm1",
-          text: "How do you prioritize features in your product roadmap?",
+          text: `How do you prioritize features in your product roadmap, especially for ${jobSkill} initiatives?`,
           category: "strategy"
         },
         {
           id: "pm2",
-          text: "Tell me about a time when you had to make a difficult product decision based on user feedback.",
+          text: `Tell me about a time when you had to make a difficult product decision related to ${jobSkill} based on user feedback.`,
           category: "decision_making"
         }
       ],
@@ -163,6 +258,7 @@ class InterviewService {
     
     // Prepare the context for generating a follow-up question
     const jobCategory = this.session.jobCategory;
+    const jobSkill = this.session.jobSkill;
     const previousQuestions = this.session.questions.map(q => q.text).join("\n");
     const previousResponses = this.session.responses.map(r => r.text).join("\n");
     
@@ -178,11 +274,11 @@ class InterviewService {
           messages: [
             {
               role: "system",
-              content: `You are an AI interviewer for a ${jobCategory} position. Generate a follow-up question based on the candidate's previous responses. The question should be challenging but fair, and should help assess the candidate's skills and fit for the role. Make the question specific to something mentioned in their previous responses.`
+              content: `You are an AI interviewer for a ${jobCategory} position, specializing in ${jobSkill}. Generate a follow-up question based on the candidate's previous responses. The question should be challenging but fair, and should help assess the candidate's skills and fit for the role. Make the question specific to something mentioned in their previous responses.`
             },
             {
               role: "user",
-              content: `Previous questions: ${previousQuestions}\n\nCandidate's responses: ${previousResponses}\n\nPlease generate a follow-up question that digs deeper into the candidate's experience, technical skills, or problem-solving abilities related to ${jobCategory}.`
+              content: `Previous questions: ${previousQuestions}\n\nCandidate's responses: ${previousResponses}\n\nPlease generate a follow-up question that digs deeper into the candidate's experience, technical skills, or problem-solving abilities related to ${jobSkill} within the ${jobCategory} field.`
             }
           ],
           temperature: 0.7
@@ -233,7 +329,7 @@ class InterviewService {
         messages: [
           {
             role: "system",
-            content: `You are an expert interviewer and career coach. Provide constructive feedback on the candidate's interview responses for a ${this.session.jobCategory} position. Focus on strengths, areas for improvement, and specific advice for future interviews.`
+            content: `You are an expert interviewer and career coach. Provide constructive feedback on the candidate's interview responses for a ${this.session.jobCategory} position with a focus on ${this.session.jobSkill}. Focus on strengths, areas for improvement, and specific advice for future interviews.`
           },
           {
             role: "user",
