@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from 'react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
@@ -27,13 +26,34 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
+// Define technical languages/frameworks by job skill
+const technicalLanguagesBySkill: Record<string, string[]> = {
+  "Frontend Development": ["JavaScript", "TypeScript", "React", "Vue.js", "Angular", "HTML/CSS", "Next.js", "Tailwind CSS"],
+  "Backend Development": ["Node.js", "Python", "Java", "C#", "Go", "PHP", "Ruby", "SQL", "MongoDB"],
+  "Full Stack Development": ["JavaScript", "TypeScript", "React", "Node.js", "Python", "Java", "MongoDB", "GraphQL", "REST API"],
+  "Mobile App Development": ["React Native", "Flutter", "Swift", "Kotlin", "Java", "Objective-C"],
+  "DevOps": ["Docker", "Kubernetes", "AWS", "Azure", "GCP", "CI/CD", "Jenkins", "Terraform"],
+  "Cloud Architecture": ["AWS", "Azure", "GCP", "Serverless", "Microservices", "Terraform", "CloudFormation"],
+  "Database Management": ["SQL", "MySQL", "PostgreSQL", "MongoDB", "Redis", "Elasticsearch", "Oracle", "NoSQL"],
+  "UI/UX Development": ["Figma", "Adobe XD", "HTML/CSS", "JavaScript", "React", "Sketch", "Responsive Design"],
+  "Machine Learning": ["Python", "TensorFlow", "PyTorch", "Scikit-learn", "R", "Keras", "NLTK"],
+  "Data Analysis": ["Python", "R", "SQL", "Excel", "Tableau", "Power BI", "Pandas", "NumPy"],
+  "Big Data Processing": ["Spark", "Hadoop", "Kafka", "Hive", "Python", "Scala", "Flink"],
+  // Add more mappings for other job skills
+};
+
+// Default languages for job skills not explicitly listed
+const defaultTechnicalLanguages = ["JavaScript", "Python", "Java", "C++", "Go", "Ruby"];
+
 const AiInterview = () => {
   // Basic state
   const [isStarted, setIsStarted] = useState(false);
   const [isMicOn, setIsMicOn] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedSkill, setSelectedSkill] = useState<string | null>(null);
+  const [selectedLanguage, setSelectedLanguage] = useState<string | null>(null);
   const [availableSkills, setAvailableSkills] = useState<string[]>([]);
+  const [availableLanguages, setAvailableLanguages] = useState<string[]>([]);
   const [currentQuestion, setCurrentQuestion] = useState<InterviewQuestion | null>(null);
   const [userResponse, setUserResponse] = useState('');
   const [interimResponse, setInterimResponse] = useState('');
@@ -78,8 +98,18 @@ const AiInterview = () => {
       const skills = jobSkillsByCategory[selectedCategory] || [];
       setAvailableSkills(skills);
       setSelectedSkill(null);
+      setSelectedLanguage(null);
     }
   }, [selectedCategory]);
+  
+  // Update available languages when job skill changes
+  useEffect(() => {
+    if (selectedSkill) {
+      const languages = technicalLanguagesBySkill[selectedSkill] || defaultTechnicalLanguages;
+      setAvailableLanguages(languages);
+      setSelectedLanguage(null);
+    }
+  }, [selectedSkill]);
   
   const jobCategories = Object.keys(jobSkillsByCategory);
   
@@ -111,8 +141,13 @@ const AiInterview = () => {
       return;
     }
     
-    // Initialize interview session
-    const session = interviewService.startSession(selectedCategory, selectedSkill);
+    // Initialize interview session with all selected criteria
+    const session = interviewService.startSession(
+      selectedCategory, 
+      selectedSkill,
+      selectedLanguage || undefined
+    );
+    
     const firstQuestion = interviewService.getCurrentQuestion();
     setCurrentQuestion(firstQuestion);
     
@@ -285,6 +320,28 @@ const AiInterview = () => {
                           {availableSkills.map((skill, index) => (
                             <SelectItem key={index} value={skill}>
                               {skill}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                  
+                  {selectedSkill && (
+                    <div className="space-y-2">
+                      <Label htmlFor="technical-language">Select Technical Language/Framework</Label>
+                      <Select 
+                        disabled={isStarted || !selectedSkill}
+                        value={selectedLanguage || ""}
+                        onValueChange={(value) => setSelectedLanguage(value)}
+                      >
+                        <SelectTrigger id="technical-language" className="w-full">
+                          <SelectValue placeholder="Select language or framework" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {availableLanguages.map((language, index) => (
+                            <SelectItem key={index} value={language}>
+                              {language}
                             </SelectItem>
                           ))}
                         </SelectContent>

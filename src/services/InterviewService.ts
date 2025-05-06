@@ -15,6 +15,7 @@ export interface InterviewResponse {
 export interface InterviewSession {
   jobCategory: string;
   jobSkill: string;
+  technicalLanguage?: string;
   currentQuestionIndex: number;
   questions: InterviewQuestion[];
   responses: InterviewResponse[];
@@ -130,13 +131,14 @@ class InterviewService {
     return this.apiKey;
   }
 
-  startSession(jobCategory: string, jobSkill: string): InterviewSession {
+  startSession(jobCategory: string, jobSkill: string, technicalLanguage?: string): InterviewSession {
     // Initialize a new interview session
     this.session = {
       jobCategory,
       jobSkill,
+      technicalLanguage,
       currentQuestionIndex: 0,
-      questions: this.getInitialQuestions(jobCategory, jobSkill),
+      questions: this.getInitialQuestions(jobCategory, jobSkill, technicalLanguage),
       responses: []
     };
     return this.session;
@@ -186,12 +188,12 @@ class InterviewService {
     return this.getCurrentQuestion();
   }
 
-  private getInitialQuestions(jobCategory: string, jobSkill: string): InterviewQuestion[] {
+  private getInitialQuestions(jobCategory: string, jobSkill: string, technicalLanguage?: string): InterviewQuestion[] {
     // Initial questions based on job category
     const commonQuestions = [
       {
         id: "q1",
-        text: `Tell me about your background and experience in ${jobCategory}, particularly with ${jobSkill}.`,
+        text: `Tell me about your background and experience in ${jobCategory}, particularly with ${jobSkill}${technicalLanguage ? ` using ${technicalLanguage}` : ''}.`,
         category: "general"
       },
       {
@@ -206,29 +208,38 @@ class InterviewService {
       }
     ];
     
+    // Technical language specific question
+    const technicalQuestion = technicalLanguage ? [
+      {
+        id: "tech1",
+        text: `Describe a challenging problem you solved using ${technicalLanguage} in a ${jobSkill} context.`,
+        category: "technical_language"
+      }
+    ] : [];
+    
     // Add category-specific and skill-specific questions
     const categoryQuestions: Record<string, InterviewQuestion[]> = {
       "Software Engineering": [
         {
           id: "se1",
-          text: `Describe a complex ${jobSkill} challenge you've faced and how you solved it.`,
+          text: `Describe a complex ${jobSkill} challenge you've faced${technicalLanguage ? ` with ${technicalLanguage}` : ''} and how you solved it.`,
           category: "technical"
         },
         {
           id: "se2",
-          text: `How do you stay updated with the latest trends and practices in ${jobSkill}?`,
+          text: `How do you stay updated with the latest trends and practices in ${jobSkill}${technicalLanguage ? ` and ${technicalLanguage}` : ''}?`,
           category: "learning"
         }
       ],
       "Data Science": [
         {
           id: "ds1",
-          text: `Explain a data project involving ${jobSkill} where you derived actionable insights.`,
+          text: `Explain a data project involving ${jobSkill}${technicalLanguage ? ` using ${technicalLanguage}` : ''} where you derived actionable insights.`,
           category: "technical"
         },
         {
           id: "ds2",
-          text: `How do you ensure the statistical validity of your models when working with ${jobSkill}?`,
+          text: `How do you ensure the statistical validity of your models when working with ${jobSkill}${technicalLanguage ? ` in a ${technicalLanguage} environment` : ''}?`,
           category: "methodology"
         }
       ],
@@ -249,6 +260,7 @@ class InterviewService {
     
     return [
       ...commonQuestions,
+      ...technicalQuestion,
       ...(categoryQuestions[jobCategory] || [])
     ];
   }
@@ -259,6 +271,7 @@ class InterviewService {
     // Prepare the context for generating a follow-up question
     const jobCategory = this.session.jobCategory;
     const jobSkill = this.session.jobSkill;
+    const technicalLanguage = this.session.technicalLanguage;
     const previousQuestions = this.session.questions.map(q => q.text).join("\n");
     const previousResponses = this.session.responses.map(r => r.text).join("\n");
     
@@ -274,11 +287,11 @@ class InterviewService {
           messages: [
             {
               role: "system",
-              content: `You are an AI interviewer for a ${jobCategory} position, specializing in ${jobSkill}. Generate a follow-up question based on the candidate's previous responses. The question should be challenging but fair, and should help assess the candidate's skills and fit for the role. Make the question specific to something mentioned in their previous responses.`
+              content: `You are an AI interviewer for a ${jobCategory} position, specializing in ${jobSkill}${technicalLanguage ? ` with expertise in ${technicalLanguage}` : ''}. Generate a follow-up question based on the candidate's previous responses. The question should be challenging but fair, and should help assess the candidate's skills and fit for the role. Make the question specific to something mentioned in their previous responses.`
             },
             {
               role: "user",
-              content: `Previous questions: ${previousQuestions}\n\nCandidate's responses: ${previousResponses}\n\nPlease generate a follow-up question that digs deeper into the candidate's experience, technical skills, or problem-solving abilities related to ${jobSkill} within the ${jobCategory} field.`
+              content: `Previous questions: ${previousQuestions}\n\nCandidate's responses: ${previousResponses}\n\nPlease generate a follow-up question that digs deeper into the candidate's experience, technical skills, or problem-solving abilities related to ${jobSkill}${technicalLanguage ? ` with ${technicalLanguage}` : ''} within the ${jobCategory} field.`
             }
           ],
           temperature: 0.7
@@ -329,7 +342,7 @@ class InterviewService {
         messages: [
           {
             role: "system",
-            content: `You are an expert interviewer and career coach. Provide constructive feedback on the candidate's interview responses for a ${this.session.jobCategory} position with a focus on ${this.session.jobSkill}. Focus on strengths, areas for improvement, and specific advice for future interviews.`
+            content: `You are an expert interviewer and career coach. Provide constructive feedback on the candidate's interview responses for a ${this.session.jobCategory} position with a focus on ${this.session.jobSkill}${this.session.technicalLanguage ? ` using ${this.session.technicalLanguage}` : ''}. Focus on strengths, areas for improvement, and specific advice for future interviews.`
           },
           {
             role: "user",
