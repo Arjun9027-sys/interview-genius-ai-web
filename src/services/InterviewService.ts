@@ -116,20 +116,7 @@ export const jobSkillsByCategory: Record<string, string[]> = {
 };
 
 class InterviewService {
-  private apiKey: string | null = null;
   private session: InterviewSession | null = null;
-
-  setApiKey(key: string) {
-    this.apiKey = key;
-    localStorage.setItem('openai_api_key', key);
-  }
-
-  getApiKey(): string | null {
-    if (!this.apiKey) {
-      this.apiKey = localStorage.getItem('openai_api_key');
-    }
-    return this.apiKey;
-  }
 
   startSession(jobCategory: string, jobSkill: string, technicalLanguage?: string): InterviewSession {
     // Initialize a new interview session
@@ -266,52 +253,25 @@ class InterviewService {
   }
 
   private async generateFollowUpQuestion(): Promise<InterviewQuestion | null> {
-    if (!this.apiKey || !this.session) return null;
+    if (!this.session) return null;
     
-    // Prepare the context for generating a follow-up question
-    const jobCategory = this.session.jobCategory;
-    const jobSkill = this.session.jobSkill;
-    const technicalLanguage = this.session.technicalLanguage;
-    const previousQuestions = this.session.questions.map(q => q.text).join("\n");
-    const previousResponses = this.session.responses.map(r => r.text).join("\n");
+    // Instead of using OpenAI API directly, this function would now connect to your own backend
+    // For now, we'll create a placeholder follow-up question to maintain functionality
     
     try {
-      const response = await fetch("https://api.openai.com/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${this.apiKey}`
-        },
-        body: JSON.stringify({
-          model: "gpt-4o",
-          messages: [
-            {
-              role: "system",
-              content: `You are an AI interviewer for a ${jobCategory} position, specializing in ${jobSkill}${technicalLanguage ? ` with expertise in ${technicalLanguage}` : ''}. Generate a follow-up question based on the candidate's previous responses. The question should be challenging but fair, and should help assess the candidate's skills and fit for the role. Make the question specific to something mentioned in their previous responses.`
-            },
-            {
-              role: "user",
-              content: `Previous questions: ${previousQuestions}\n\nCandidate's responses: ${previousResponses}\n\nPlease generate a follow-up question that digs deeper into the candidate's experience, technical skills, or problem-solving abilities related to ${jobSkill}${technicalLanguage ? ` with ${technicalLanguage}` : ''} within the ${jobCategory} field.`
-            }
-          ],
-          temperature: 0.7
-        })
-      });
+      // This mock function simulates what your backend would do
+      const jobCategory = this.session.jobCategory;
+      const jobSkill = this.session.jobSkill;
+      const technicalLanguage = this.session.technicalLanguage;
       
-      if (!response.ok) {
-        throw new Error(`API request failed: ${response.statusText}`);
-      }
-      
-      const data = await response.json();
-      const generatedQuestion = data.choices[0]?.message?.content;
-      
-      if (!generatedQuestion) {
-        throw new Error("No question generated");
-      }
+      // Create a generic follow-up question based on the session data
+      const followUpText = `Tell me more about your experience with ${jobSkill} ${technicalLanguage ? 
+        `using ${technicalLanguage}` : 
+        ''} in the ${jobCategory} field. What specific challenges have you encountered?`;
       
       return {
         id: `gen-${this.session.questions.length + 1}`,
-        text: generatedQuestion,
+        text: followUpText,
         category: "follow_up"
       };
     } catch (error) {
@@ -321,49 +281,41 @@ class InterviewService {
   }
 
   getFeedback(): Promise<string> {
-    if (!this.apiKey || !this.session) {
-      return Promise.reject("No active session or API key");
+    if (!this.session) {
+      return Promise.reject("No active session");
     }
     
-    // Prepare all questions and responses
-    const responseData = this.session.questions.map((question, index) => {
-      const response = this.session.responses[index] || { text: "No response provided" };
-      return { question: question.text, response: response.text };
-    });
+    // Similar to generateFollowUpQuestion, this would connect to your backend
+    // For now, we'll create a placeholder feedback response
     
-    return fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${this.apiKey}`
-      },
-      body: JSON.stringify({
-        model: "gpt-4o",
-        messages: [
-          {
-            role: "system",
-            content: `You are an expert interviewer and career coach. Provide constructive feedback on the candidate's interview responses for a ${this.session.jobCategory} position with a focus on ${this.session.jobSkill}${this.session.technicalLanguage ? ` using ${this.session.technicalLanguage}` : ''}. Focus on strengths, areas for improvement, and specific advice for future interviews.`
-          },
-          {
-            role: "user",
-            content: `Here are the interview questions and the candidate's responses:\n\n${JSON.stringify(responseData, null, 2)}\n\nPlease provide comprehensive feedback on the candidate's interview performance.`
-          }
-        ],
-        temperature: 0.7
-      })
-    })
-    .then(response => {
-      if (!response.ok) {
-        throw new Error(`API request failed: ${response.statusText}`);
-      }
-      return response.json();
-    })
-    .then(data => {
-      const feedback = data.choices[0]?.message?.content;
-      if (!feedback) {
-        throw new Error("No feedback generated");
-      }
-      return feedback;
+    return new Promise((resolve) => {
+      // Create a generic feedback based on session data
+      const { jobCategory, jobSkill, technicalLanguage, questions, responses } = this.session!;
+      
+      const feedbackText = `
+# Interview Feedback
+
+## Overview
+You've completed an interview for a ${jobCategory} position focusing on ${jobSkill}${technicalLanguage ? ` with ${technicalLanguage}` : ''}.
+
+## Strengths
+- You provided detailed responses to the questions
+- Your answers demonstrated knowledge of ${jobSkill}
+
+## Areas for Improvement
+- Consider providing more specific examples in your answers
+- Focus on quantifiable achievements when possible
+
+## Preparation Tips
+- Research more about current trends in ${jobCategory}
+- Prepare stories that highlight your experience with ${jobSkill}${technicalLanguage ? ` and ${technicalLanguage}` : ''}
+- Practice explaining technical concepts in a clear, concise manner
+
+Keep practicing and refining your interview skills!
+      `;
+      
+      // Return the feedback text after a short delay to simulate API call
+      setTimeout(() => resolve(feedbackText), 500);
     });
   }
 }

@@ -12,8 +12,6 @@ import {
   DialogDescription,
   DialogFooter
 } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { interviewService, InterviewQuestion, InterviewResponse, jobSkillsByCategory } from '@/services/InterviewService';
@@ -25,6 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Label } from '@/components/ui/label';
 
 // Define technical languages/frameworks by job skill
 const technicalLanguagesBySkill: Record<string, string[]> = {
@@ -58,8 +57,6 @@ const AiInterview = () => {
   const [userResponse, setUserResponse] = useState('');
   const [interimResponse, setInterimResponse] = useState('');
   const [isThinking, setIsThinking] = useState(false);
-  const [isAPIDialogOpen, setIsAPIDialogOpen] = useState(false);
-  const [apiKey, setApiKey] = useState('');
   const [feedback, setFeedback] = useState<string | null>(null);
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
   
@@ -71,15 +68,6 @@ const AiInterview = () => {
   useEffect(() => {
     speechToTextRef.current = new SpeechToText();
     textToSpeechRef.current = new TextToSpeech();
-    
-    // Check for stored API key
-    const storedKey = interviewService.getApiKey();
-    if (storedKey) {
-      setApiKey(storedKey);
-    } else {
-      // If no API key found, show the dialog
-      setIsAPIDialogOpen(true);
-    }
     
     // Cleanup
     return () => {
@@ -113,17 +101,6 @@ const AiInterview = () => {
   
   const jobCategories = Object.keys(jobSkillsByCategory);
   
-  const saveApiKey = () => {
-    if (!apiKey.trim()) {
-      toast.error('Please enter a valid API key');
-      return;
-    }
-    
-    interviewService.setApiKey(apiKey);
-    setIsAPIDialogOpen(false);
-    toast.success('API key saved successfully');
-  };
-  
   const startInterview = () => {
     if (!selectedCategory) {
       toast.error('Please select a job category first');
@@ -132,12 +109,6 @@ const AiInterview = () => {
     
     if (!selectedSkill) {
       toast.error('Please select a specific job skill');
-      return;
-    }
-    
-    // Check if API key is available
-    if (!interviewService.getApiKey()) {
-      setIsAPIDialogOpen(true);
       return;
     }
     
@@ -352,7 +323,7 @@ const AiInterview = () => {
                   <Button 
                     className="w-full bg-gradient-to-r from-custom-purple to-custom-blue-bright button-glow shadow-md"
                     onClick={startInterview}
-                    disabled={!selectedCategory || !selectedSkill || isStarted || !interviewService.getApiKey()}
+                    disabled={!selectedCategory || !selectedSkill || isStarted}
                   >
                     <Play className="h-4 w-4 mr-2" /> Start Interview
                   </Button>
@@ -527,34 +498,6 @@ const AiInterview = () => {
           </div>
         </section>
       </main>
-      
-      {/* API Key Dialog */}
-      <Dialog open={isAPIDialogOpen} onOpenChange={setIsAPIDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Enter OpenAI API Key</DialogTitle>
-            <DialogDescription>
-              To use the AI interview feature, please enter your OpenAI API key. 
-              Your key will be stored locally and never sent to our servers.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="api-key">API Key</Label>
-              <Input
-                id="api-key"
-                type="password"
-                placeholder="sk-..."
-                value={apiKey}
-                onChange={(e) => setApiKey(e.target.value)}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button onClick={saveApiKey}>Save Key</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
       
       {/* Interview Feedback Dialog */}
       <Dialog open={isFeedbackOpen} onOpenChange={setIsFeedbackOpen}>
