@@ -1,64 +1,98 @@
-# Welcome to your Lovable project
+# AI Interview Genius - Next.js
 
-## Project info
+A Next.js-powered AI interview practice platform that helps users prepare for technical interviews with personalized questions and real-time feedback powered by OpenAI.
 
-**URL**: https://lovable.dev/projects/eaef1493-386d-4b66-9702-691ed9875adc
+## 🚀 Features
 
-## How can I edit this code?
+- 🤖 **AI-Powered Questions**: Dynamic interview questions generated using OpenAI based on job category and skills
+- 📝 **Real-time Feedback**: Instant feedback on responses with suggestions for improvement
+- 🎯 **Role-Specific Practice**: Tailored questions for different job categories and technical skills
+- 🔧 **Multi-Technology Support**: Practice with specific programming languages and frameworks
+- 💬 **Interactive Sessions**: Conversational interview simulation with follow-up questions
 
-There are several ways of editing your application.
+## 🛠️ Tech Stack
 
-**Use Lovable**
+- **Frontend**: Next.js 14, React, TypeScript, Tailwind CSS
+- **Backend**: Express.js with OpenAI API integration
+- **UI Components**: Radix UI primitives with shadcn/ui
+- **Icons**: Lucide React
+- **Styling**: Tailwind CSS with custom design system
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/eaef1493-386d-4b66-9702-691ed9875adc) and start prompting.
+## 📋 Prerequisites
 
-Changes made via Lovable will be committed automatically to this repo.
+- Node.js 18+ 
+- OpenAI API key (get one from [OpenAI Platform](https://platform.openai.com/api-keys))
 
-**Use your preferred IDE**
+## 🏃‍♂️ Getting Started
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### Installation
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
+```bash
+# Step 1: Clone the repository
 git clone <YOUR_GIT_URL>
 
-# Step 2: Navigate to the project directory.
+# Step 2: Navigate to the project directory
 cd <YOUR_PROJECT_NAME>
 
-# Step 3: Install the necessary dependencies.
-npm i
+# Step 3: Install dependencies
+npm install
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Step 4: Set up your OpenAI API key in server/index.js or .env file
+# Make sure to add your OPENAI_API_KEY to the Express server environment
+```
+
+### Running the Application
+
+**Important**: You need to run both the Express backend and Next.js frontend:
+
+```bash
+# Terminal 1: Start the Express backend server (port 3000)
+npm run server
+
+# Terminal 2: Start the Next.js development server (port 3001 or next available)
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+Then open your browser to the Next.js development server URL (usually http://localhost:3001)
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## 📁 Project Structure
 
-**Use GitHub Codespaces**
+```
+├── app/                    # Next.js App Router
+│   ├── api/               # Next.js API routes (proxy to Express)
+│   ├── interview/         # Interview page
+│   ├── layout.tsx         # Root layout
+│   ├── page.tsx          # Home page
+│   └── globals.css       # Global styles
+├── components/            # React components
+│   ├── ui/               # Reusable UI components (shadcn/ui)
+│   └── interview/        # Interview-specific components
+├── lib/                  # Utility functions
+├── server/               # Express.js backend with OpenAI integration
+└── tailwind.config.ts    # Tailwind configuration
+```
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## 🔌 API Endpoints
 
-## What technologies are used for this project?
+The application uses these API endpoints (Next.js proxies to Express):
+
+- `POST /api/interview/start` - Initialize interview session with job category/skill
+- `POST /api/interview/response` - Submit response and get next question
+- `POST /api/interview/feedback` - Get comprehensive interview feedback
+
+## 🚀 Technologies Used
 
 This project is built with:
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+- **Next.js 14** - React framework with App Router
+- **TypeScript** - Type-safe JavaScript
+- **React** - UI library
+- **Express.js** - Backend API server
+- **OpenAI API** - AI-powered question generation and feedback
+- **shadcn/ui** - Modern UI component library
+- **Tailwind CSS** - Utility-first CSS framework
+- **Radix UI** - Unstyled, accessible UI primitives
+- **Lucide React** - Beautiful icon library
 
 ## How can I deploy this project?
 
